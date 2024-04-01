@@ -2,11 +2,13 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { getNotes, readNote, writeNote } from './lib'
+import { GetNotes, ReadNote, WriteNote } from '@shared/types'
 
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
+    width: 1000,
     height: 670,
     show: false,
     autoHideMenuBar: true,
@@ -59,6 +61,10 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  ipcMain.handle('getNotes', (_, ...args: Parameters<GetNotes>) => getNotes(...args));
+  ipcMain.handle('readNote', (_, ...args: Parameters<ReadNote>) => readNote(...args));
+  ipcMain.handle('writeNote', (_, ...args: Parameters<WriteNote>) => writeNote(...args));
 
   createWindow()
 
