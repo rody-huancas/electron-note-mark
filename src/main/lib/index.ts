@@ -1,4 +1,4 @@
-import { appDirectoryName, fileEncoding } from '../../shared/constants'
+import { appDirectoryName, fileEncoding, welcomeNoteFilename } from '../../shared/constants'
 import { NoteInfo } from '@shared/models'
 import { CreateNote, DeleteNote, GetNotes, WriteNote } from '@shared/types'
 import { dialog } from 'electron'
@@ -6,6 +6,8 @@ import { writeFileSync } from 'fs'
 import { ensureDir, readdir, stat, readFile, writeFile, remove } from 'fs-extra'
 import { homedir } from 'os'
 import path from 'path'
+import { isEmpty } from 'lodash';
+import welcomeNoteFile from '../../../resources/WelcomeNote.md?asset';
 
 export const getRootDir = () => {
   // return `${homedir()}/OneDrive/Escritorio/${appDirectoryName}`
@@ -22,7 +24,15 @@ export const getNotes: GetNotes = async () => {
     withFileTypes: false
   })
 
-  const notes = notesFileNames.filter((fileName) => fileName.endsWith('.md'))
+  const notes = notesFileNames.filter((fileName) => fileName.endsWith('.md'));
+
+  if(isEmpty(notes)) {
+    const content = await readFile(welcomeNoteFile, {encoding: fileEncoding});
+
+    await writeFile(`${rootDir}/${welcomeNoteFilename}`, content, {encoding: fileEncoding});
+
+    notes.push(welcomeNoteFilename);
+  }
 
   return Promise.all(notes.map(getNoteInfoFromFileName))
 }
