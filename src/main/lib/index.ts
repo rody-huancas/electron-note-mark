@@ -1,11 +1,15 @@
 import { appDirectoryName, fileEncoding } from '../../shared/constants'
 import { NoteInfo } from '@shared/models'
-import { GetNotes, WriteNote } from '@shared/types'
+import { CreateNote, GetNotes, WriteNote } from '@shared/types'
+import { dialog } from 'electron'
+import { writeFileSync } from 'fs'
 import { ensureDir, readdir, stat, readFile, writeFile } from 'fs-extra'
 import { homedir } from 'os'
+import path from 'path'
 
 export const getRootDir = () => {
-  return `${homedir()}/OneDrive/Escritorio/${appDirectoryName}`
+  // return `${homedir()}/OneDrive/Escritorio/${appDirectoryName}`
+  return path.join(homedir(), appDirectoryName);
 }
 
 export const getNotes: GetNotes = async () => {
@@ -41,4 +45,38 @@ export const writeNote: WriteNote = async(filename, content) => {
   const rootDir = getRootDir();
 
   return writeFile(`${rootDir}/${filename}.md`, content, { encoding: fileEncoding });
+}
+
+export const createNote: CreateNote = async() => {
+  const rootDir = getRootDir();
+
+  await ensureDir(rootDir);
+
+  const { filePath, canceled } = await dialog.showSaveDialog({
+    title: 'New note',
+    defaultPath: `${rootDir}/Untitled.md`,
+    buttonLabel: 'Create',
+    properties: ['showOverwriteConfirmation'],
+    showsTagField: false,
+    filters: [{name: 'Markdown', extensions: ['md']}]
+  });
+
+  if(canceled || !filePath) {
+    return false;
+  } 
+
+  const { name: filename, dir: parentDir } = path.parse(filePath);
+  
+  if(parentDir !== rootDir) {
+    await dialog.showMessageBox({
+      type: 'error',
+      title: 'La creación ha fallado',
+      message: `Todas las notas deben guardarse en ${rootDir}. Evite utilizar otros directorios.`
+    });
+    return false;
+  }
+
+  await writeFileSync(filePath, '');
+
+  return filename;
 }
